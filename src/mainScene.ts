@@ -1,47 +1,67 @@
 import * as BABYLON from "@babylonjs/core";
 
-export const createScene = async (canvas: HTMLCanvasElement, engine: BABYLON.Engine): Promise<BABYLON.Scene> => {
-    // This creates a basic Babylon Scene object (non-mesh)
-    const scene = new BABYLON.Scene(engine);
+class XRApp {
+  private engine: BABYLON.Engine;
+  private canvas: HTMLCanvasElement;
+  private scene: BABYLON.Scene | null = null;
 
-    // This creates and positions a free camera (non-mesh)
+  constructor(canvas: HTMLCanvasElement) {
+    this.canvas = canvas;
+    this.engine = new BABYLON.Engine(canvas, true);
+  }
+
+  async create(): Promise<BABYLON.Scene> {
+    this.scene = new BABYLON.Scene(this.engine);
+
     const camera = new BABYLON.FreeCamera(
-        "camera1",
-        new BABYLON.Vector3(0, 5, -10),
-        scene
+      "camera1",
+      new BABYLON.Vector3(0, 5, 10),
+      this.scene
     );
 
-    // This targets the camera to scene origin
     camera.setTarget(BABYLON.Vector3.Zero());
 
-    // This attaches the camera to the canvas
-    camera.attachControl(canvas, true);
+    camera.attachControl(this.canvas, true);
 
-    // This creates a light, aiming 0,1,0 - to the sky (non-mesh)
     const light = new BABYLON.HemisphericLight(
-        "light",
-        new BABYLON.Vector3(0, 1, 0),
-        scene
+      "light",
+      new BABYLON.Vector3(0, 5, 0),
+      this.scene
     );
 
-    // Default intensity is 1. Let's dim the light a small amount
     light.intensity = 0.7;
 
-    // Our built-in 'sphere' shape
     const sphere = BABYLON.MeshBuilder.CreateSphere(
-        "sphere",
-        {diameter: 2, segments: 32},
-        scene
+      "sphere",
+      { diameter: 2, segments: 32 },
+      this.scene
     );
-
-    // Move the sphere upward 1/2 its height
     sphere.position.y = 1;
+    sphere.position.z = 5;
 
-    // Create a default environment for the scene
-    scene.createDefaultEnvironment();
+    console.log("before createDefaultXRExperienceAsync")
 
-    // XR
-    const xrHelper = await scene.createDefaultXRExperienceAsync();
+    await this.scene.createDefaultXRExperienceAsync({
+      uiOptions: {
+        sessionMode: "immersive-ar",
+      },
+      optionalFeatures: true,
+    });
 
-    return scene;
-};
+    this.engine.runRenderLoop(() => {
+      if (this.scene) {
+        this.scene.render();
+      }
+    });
+
+    console.log("Scene created", this.scene);
+    return this.scene;
+  }
+
+  resize(): void {
+    this.engine.resize();
+  }
+}
+
+export default XRApp;
+

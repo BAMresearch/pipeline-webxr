@@ -1,7 +1,6 @@
 import "./style.css";
 
-import { Engine } from "@babylonjs/core/Engines/engine.js";
-import {createScene} from "./mainScene.ts";
+import XRApp from "./mainScene.ts";
 
 // Required for EnvironmentHelper
 import "@babylonjs/core/Materials/Textures/Loaders";
@@ -17,20 +16,27 @@ import "@babylonjs/core/Materials/Node/Blocks";
 
 // Create a canvas element for rendering
 const app = document.querySelector<HTMLDivElement>("#app");
+console.log("app", app)
 const canvas = document.createElement("canvas");
+console.log("canvas created", canvas)
 
 app?.appendChild(canvas);
 
 const resizeCanvas = () => {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
 };
-
-window.addEventListener("resize", resizeCanvas);
 
 resizeCanvas();
 
-// Create engine and a scene
-const babylonEngine = new Engine(canvas, true);
+// const babylonEngine = new Engine(canvas, true);
 
-const scene = await createScene(canvas, babylonEngine);
+const xrApp = new XRApp(canvas)
+// const noXRApp = new NoXRApp(canvas, babylonEngine)
+
+xrApp.create().then((scene) => {
+  console.log("XR Scene is ready:", scene);
+});
+
+// Handle window resize
+window.addEventListener("resize", () => xrApp.resize());
