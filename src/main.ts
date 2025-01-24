@@ -13,6 +13,7 @@ import "@babylonjs/loaders/glTF";
 //  Uncaught (in promise) Build of NodeMaterial failed: input rgba from block
 //  FragmentOutput[FragmentOutputBlock] is not connected and is not optional.
 import "@babylonjs/core/Materials/Node/Blocks";
+import MeshTransformers from "./meshTransformers.ts";
 
 // Create a canvas element for rendering
 const app = document.querySelector<HTMLDivElement>("#app");
@@ -38,5 +39,12 @@ xrApp.create().then((scene) => {
   console.log("XR Scene is ready:", scene);
 });
 
+const meshTransformers = new MeshTransformers();
+
 // Handle window resize
 window.addEventListener("resize", () => xrApp.resize());
+const loadedMeshes = await xrApp.loadGLTFModel("trussarc.gltf")
+const trussarc = loadedMeshes[1] // mesh0
+
+meshTransformers.centerPivot(trussarc)
+
