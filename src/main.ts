@@ -14,6 +14,7 @@ import "@babylonjs/loaders/glTF";
 //  FragmentOutput[FragmentOutputBlock] is not connected and is not optional.
 import "@babylonjs/core/Materials/Node/Blocks";
 import MeshTransformers from "./meshTransformers.ts";
+import * as BABYLON from "@babylonjs/core";
 
 // Create a canvas element for rendering
 const app = document.querySelector<HTMLDivElement>("#app");
@@ -44,7 +45,17 @@ const meshTransformers = new MeshTransformers();
 // Handle window resize
 window.addEventListener("resize", () => xrApp.resize());
 const loadedMeshes = await xrApp.loadGLTFModel("trussarc.gltf")
-const trussarc = loadedMeshes[1] // mesh0
+const trussarc = await xrApp.findMeshByName(loadedMeshes, "mesh0")
+
+if (!trussarc) {
+  throw new Error("Trussarc mesh not found");
+}
 
 meshTransformers.centerPivot(trussarc)
+trussarc.position.y = 1;
+trussarc.position.z = 2;
+
+const testMaterial = new BABYLON.StandardMaterial("testMaterial", xrApp.scene!);
+
+trussarc.material = testMaterial;
 
