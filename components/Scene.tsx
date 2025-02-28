@@ -12,6 +12,7 @@ import {
 import { supabase } from "@/lib/supabase";
 import { registerBuiltInLoaders } from "@babylonjs/loaders/dynamic";
 import SupabaseUtils from "@/lib/supabaseUtils";
+import MeshUtils from "@/lib/meshUtils";
 
 interface SceneProps {
   modelName: string
@@ -144,6 +145,16 @@ export default function Scene({ modelName, modelScaling }: SceneProps) {
             mesh.scaling = new Vector3(modelScaling, modelScaling, modelScaling);
           }
         });
+
+        const myMaterial = new BABYLON.StandardMaterial("myMaterial", sceneRef.current);
+
+        myMaterial.diffuseColor = new BABYLON.Color3(1, 0, 1);
+
+        const mesh0 = MeshUtils.findMeshByName(sceneRef.current, "mesh0")
+
+        if (mesh0)
+          mesh0.material = myMaterial
+
       } catch (error) {
         console.error("Error loading model:", error);
       }
