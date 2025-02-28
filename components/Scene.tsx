@@ -148,7 +148,7 @@ export default function Scene({ modelName, modelScaling }: SceneProps) {
 
         const myMaterial = new BABYLON.StandardMaterial("myMaterial", sceneRef.current);
 
-        myMaterial.diffuseColor = new BABYLON.Color3(1, 0, 1);
+        myMaterial.diffuseColor = new BABYLON.Color3(0.5, 0.2, 1);
 
         const mesh0 = MeshUtils.findMeshByName(sceneRef.current, "mesh0")
 
