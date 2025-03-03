@@ -2,9 +2,12 @@
 import {useEffect, useRef} from "react"
 import * as BABYLON from "@babylonjs/core"
 import {
+    AbstractMesh,
     ArcRotateCamera,
     Engine,
     HemisphericLight,
+    KeyboardEventTypes,
+    PointerEventTypes,
     Scene as BabylonScene,
     Vector3,
     WebXRDefaultExperience
@@ -23,14 +26,11 @@ export default function Scene({modelName, modelScaling}: SceneProps) {
     const engineRef = useRef<Engine | null>(null);
     const sceneRef = useRef<BabylonScene | null>(null);
     const xrExperienceRef = useRef<WebXRDefaultExperience | null>(null);
-    const loadedModelRef = useRef<BABYLON.AbstractMesh[]>([]);
 
-    /*
-      Materials
-     */
-    const loadedMaterialsRef = useRef<BABYLON.Material[]>([]);
-    const currentMaterialIndexRef = useRef<number>(0);
-    const targetMeshRef = useRef<BABYLON.AbstractMesh | null>(null);
+    // Track all loaded target meshes (all mesh0 instances from different models)
+    const targetMeshesRef = useRef<AbstractMesh[]>([]);
+    // Current visible mesh index
+    const currentMeshIndexRef = useRef<number>(0);
 
     // Initialize engine and scene only once
     useEffect(() => {
@@ -75,7 +75,12 @@ export default function Scene({modelName, modelScaling}: SceneProps) {
             optionalFeatures: true,
         }).then((xr) => {
             xrExperienceRef.current = xr;
-            addControllerObservable(xr);
+            console.log("XR experience created successfully");
+
+            // Setup controller observables after XR is initialized
+            setupControllerObservables(xr);
+            // Setup manual button press handling using scene action manager
+            setupManualTriggerHandling(scene);
         }).catch((error) => {
             console.error("Error creating XR experience:", error);
         });
@@ -99,43 +104,88 @@ export default function Scene({modelName, modelScaling}: SceneProps) {
         };
     }, []);
 
-    // Handle controller interactions for material swapping
-    const addControllerObservable = (xr: WebXRDefaultExperience) => {
+    // Function to cycle through visible meshes
+    const cycleMeshVisibility = () => {
+        if (targetMeshesRef.current.length === 0) {
+            console.log("No meshes available to cycle through");
+            return;
+        }
+
+        // Hide current mesh
+        if (targetMeshesRef.current[currentMeshIndexRef.current]) {
+            targetMeshesRef.current[currentMeshIndexRef.current].setEnabled(false);
+        }
+
+        // Move to next mesh
+        currentMeshIndexRef.current = (currentMeshIndexRef.current + 1) % targetMeshesRef.current.length;
+
+        // Show new current mesh
+        if (targetMeshesRef.current[currentMeshIndexRef.current]) {
+            targetMeshesRef.current[currentMeshIndexRef.current].setEnabled(true);
+            console.log(`Switched to mesh index ${currentMeshIndexRef.current}: ${targetMeshesRef.current[currentMeshIndexRef.current].name}`);
+        }
+    };
+
+    // Setup manual trigger handling for testing without XR controllers
+    const setupManualTriggerHandling = (scene: BabylonScene) => {
+        // Add keyboard event for testing (press 'T' to simulate trigger)
+        scene.onKeyboardObservable.add((kbInfo) => {
+            if (kbInfo.type === KeyboardEventTypes.KEYDOWN) {
+                if (kbInfo.event.key === 't' || kbInfo.event.key === 'T') {
+                    console.log("Manual trigger activated via keyboard");
+                    cycleMeshVisibility();
+                }
+            }
+        });
+
+        // Also respond to pointer down events (clicks)
+        scene.onPointerObservable.add((pointerInfo) => {
+            if (pointerInfo.type === PointerEventTypes.POINTERDOWN) {
+                console.log("Screen tap/click detected");
+                cycleMeshVisibility();
+            }
+        });
+    };
+
+    const setupControllerObservables = (xr: WebXRDefaultExperience) => {
         xr.input.onControllerAddedObservable.add((inputSource) => {
             inputSource.onMotionControllerInitObservable.add((motionController) => {
                 const triggerComponent = motionController.getComponent("xr-standard-trigger");
                 if (triggerComponent) {
+                    let wasPressed = false;
+
                     triggerComponent.onButtonStateChangedObservable.add((component) => {
-                        if (component.value > 0.9 && targetMeshRef.current && loadedMaterialsRef.current.length > 0) {
-                            currentMaterialIndexRef.current = (currentMaterialIndexRef.current + 1) % loadedMaterialsRef.current.length;
-                            targetMeshRef.current.material = loadedMaterialsRef.current[currentMaterialIndexRef.current];
-                            console.log("Switched material to index:", currentMaterialIndexRef.current);
+                        if (component.pressed && !wasPressed) {
+                            console.log("Controller trigger press detected");
+                            cycleMeshVisibility();
                         }
+                        wasPressed = component.pressed;
                     });
                 }
             });
         });
+
+        xr.input.onControllerRemovedObservable.add((controller) => {
+            console.log("Controller disconnected:", controller.uniqueId);
+        });
     };
 
-    // Load and update models when props change
+
     useEffect(() => {
         const loadModels = async () => {
             if (!sceneRef.current) return;
 
             try {
-                // Clean up previously loaded model
-                loadedModelRef.current.forEach(mesh => {
-                    if (mesh && mesh.name !== "floor") {
+                // Clear existing target meshes
+                targetMeshesRef.current.forEach(mesh => {
+                    if (mesh) {
                         mesh.dispose();
                     }
                 });
-                loadedModelRef.current = [];
+                targetMeshesRef.current = [];
+                currentMeshIndexRef.current = 0;
 
-                // Clear materials collection
-                loadedMaterialsRef.current = [];
-                currentMaterialIndexRef.current = 0;
-                targetMeshRef.current = null;
-                let loadedFirstMesh = false;
+                console.log("Loading models for folder:", modelName);
 
                 const folderPath = `public/${modelName}`;
                 const files = await SupabaseUtils.listFiles("models", folderPath, {
@@ -148,50 +198,46 @@ export default function Scene({modelName, modelScaling}: SceneProps) {
                     return;
                 }
 
-                // Load all models in the folder
+                console.log(`Found ${files.data.length} files to load`);
+
                 for (const file of files.data) {
                     const modelPath = `${folderPath}/${file.name}`;
                     const {data} = supabase.storage.from("models").getPublicUrl(modelPath);
-
-                    // Load model to a container
                     const container = await BABYLON.LoadAssetContainerAsync(data.publicUrl, sceneRef.current);
-
-                    // Scale all meshes
-                    container.meshes.forEach(mesh => {
-                        mesh.scaling = new Vector3(modelScaling, modelScaling, modelScaling);
-                    });
-
-                    // Find mesh0 if it exists
                     const mesh0 = container.meshes.find(mesh => mesh.name === "mesh0");
 
                     if (mesh0) {
-                        container.materials.forEach(material => {
-                            loadedMaterialsRef.current.push(material);
-                        });
+                        console.log("Found mesh0 in the model!");
+                        container.addAllToScene();
+                        mesh0.scaling = new Vector3(modelScaling, modelScaling, modelScaling);
+                        targetMeshesRef.current.push(mesh0);
+                        mesh0.setEnabled(currentMeshIndexRef.current === targetMeshesRef.current.length - 1);
 
-                        if (!loadedFirstMesh) {
-                            container.addToScene();
-                            targetMeshRef.current = mesh0;
-                            loadedFirstMesh = true;
-                        }
-
-                        // Store the loaded meshes for cleanup later
-                        loadedModelRef.current = [...loadedModelRef.current, ...container.meshes];
-
-                        console.log(`Loaded model: ${file.name}`);
-                        console.log(`Found mesh0, stored ${loadedMaterialsRef.current.length} materials total`);
+                        console.log(`Successfully loaded model: ${file.name}`);
                     } else {
-                        // Still collect materials even if no mesh0
-                        console.log(`No mesh0 found in model: ${file.name}`);
-                        container.materials.forEach(material => {
-                            loadedMaterialsRef.current.push(material);
-                        });
+                        console.log(`No mesh0 found in model: ${file.name}, looking for other meshes`);
+                        const firstMesh = container.meshes.find(mesh =>
+                            mesh.name !== "root" && mesh.name !== "__root__");
+
+                        if (firstMesh) {
+                            console.log(`Using ${firstMesh.name} as target mesh instead`);
+                            container.addAllToScene();
+                            firstMesh.scaling = new Vector3(modelScaling, modelScaling, modelScaling);
+                            targetMeshesRef.current.push(firstMesh);
+                            firstMesh.setEnabled(currentMeshIndexRef.current === targetMeshesRef.current.length - 1);
+                        } else {
+                            console.log("No suitable mesh found in this model");
+                        }
                     }
                 }
 
-                console.log("Total materials loaded:", loadedMaterialsRef.current.length);
-                console.log("Target mesh found:", targetMeshRef.current ? "Yes" : "No");
-                console.log(loadedMaterialsRef.current)
+                if (targetMeshesRef.current.length > 0) {
+                    targetMeshesRef.current.forEach(mesh => mesh.setEnabled(false));
+                    targetMeshesRef.current[currentMeshIndexRef.current].setEnabled(true);
+                    console.log(`Showing mesh ${currentMeshIndexRef.current}: ${targetMeshesRef.current[currentMeshIndexRef.current].name}`);
+                }
+
+                console.log("Total meshes loaded:", targetMeshesRef.current.length);
             } catch (error) {
                 console.error("Error loading models:", error);
             }
