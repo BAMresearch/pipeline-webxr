@@ -1,4 +1,4 @@
-import * as GUI from "@babylonjs/gui"
+import * as GUI from "@babylonjs/gui";
 
 class MenuUtils {
   /**
@@ -7,9 +7,15 @@ class MenuUtils {
    * @param controlName The name of the control to find
    * @returns The found control or null if not found
    */
-  static findControlByName(menu: GUI.AdvancedDynamicTexture | GUI.Container, controlName: string): GUI.Control | null {
+  static findControlByName(
+    menu: GUI.AdvancedDynamicTexture | GUI.Container,
+    controlName: string,
+  ): GUI.Control | null {
     // Check direct children first
-    const children = menu instanceof GUI.AdvancedDynamicTexture ? menu.getChildren() : menu.children;
+    const children =
+      menu instanceof GUI.AdvancedDynamicTexture
+        ? menu.getChildren()
+        : menu.children;
 
     for (const control of children) {
       // Check if this is the control we're looking for
@@ -36,7 +42,10 @@ class MenuUtils {
    * @param type The constructor function of the control type to find
    * @returns Array of controls matching the specified type
    */
-  static findControlsByType<T extends GUI.Control>(menu: GUI.AdvancedDynamicTexture | GUI.Container, type: new (...args: any[]) => T): T[] {
+  static findControlsByType<T extends GUI.Control>(
+    menu: GUI.AdvancedDynamicTexture | GUI.Container,
+    type: new (...args: any[]) => T,
+  ): T[] {
     const result: T[] = [];
 
     // Function to recursively search containers

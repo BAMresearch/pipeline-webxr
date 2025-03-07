@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import { useEffect, useState, memo } from "react";
 import { supabase } from "@/lib/supabase";
@@ -8,7 +8,9 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 
 // Use memo to prevent unnecessary re-renders of the Scene component
-const Scene = memo(dynamic(() => import("../components/Scene"), { ssr: false }));
+const Scene = memo(
+  dynamic(() => import("../components/Scene"), { ssr: false }),
+);
 
 export default function Home() {
   const [models, setModels] = useState<string[]>([]);
@@ -18,13 +20,13 @@ export default function Home() {
     scaling: "1",
     rotationX: "0",
     rotationY: "0",
-    rotationZ: "0"
+    rotationZ: "0",
   });
 
   const [sceneParams, setSceneParams] = useState({
     modelName: "",
     modelScaling: 1,
-    modelRotation: { x: 0, y: 0, z: 0 }
+    modelRotation: { x: 0, y: 0, z: 0 },
   });
 
   useEffect(() => {
@@ -33,15 +35,17 @@ export default function Home() {
 
   useEffect(() => {
     if (selectedModel) {
-      setSceneParams(prev => ({
+      setSceneParams((prev) => ({
         ...prev,
-        modelName: selectedModel
+        modelName: selectedModel,
       }));
     }
   }, [selectedModel]);
 
   async function fetchModels() {
-    const { data, error } = await supabase.storage.from("models").list("public");
+    const { data, error } = await supabase.storage
+      .from("models")
+      .list("public");
 
     if (error) {
       console.error("Error fetching models:", error);
@@ -56,9 +60,9 @@ export default function Home() {
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = event.target;
-    setFormValues(prev => ({
+    setFormValues((prev) => ({
       ...prev,
-      [id]: value
+      [id]: value,
     }));
   };
 
@@ -69,8 +73,8 @@ export default function Home() {
       modelRotation: {
         x: parseFloat(formValues.rotationX) || 0,
         y: parseFloat(formValues.rotationY) || 0,
-        z: parseFloat(formValues.rotationZ) || 0
-      }
+        z: parseFloat(formValues.rotationZ) || 0,
+      },
     });
   };
 
@@ -121,7 +125,9 @@ export default function Home() {
           <Label className="block mb-2">Object Rotation (in degrees)</Label>
           <div className="grid grid-cols-3 gap-2">
             <div>
-              <Label htmlFor="rotationX" className="text-sm">X Axis</Label>
+              <Label htmlFor="rotationX" className="text-sm">
+                X Axis
+              </Label>
               <Input
                 id="rotationX"
                 type="number"
@@ -131,7 +137,9 @@ export default function Home() {
               />
             </div>
             <div>
-              <Label htmlFor="rotationY" className="text-sm">Y Axis</Label>
+              <Label htmlFor="rotationY" className="text-sm">
+                Y Axis
+              </Label>
               <Input
                 id="rotationY"
                 type="number"
@@ -141,7 +149,9 @@ export default function Home() {
               />
             </div>
             <div>
-              <Label htmlFor="rotationZ" className="text-sm">Z Axis</Label>
+              <Label htmlFor="rotationZ" className="text-sm">
+                Z Axis
+              </Label>
               <Input
                 id="rotationZ"
                 type="number"
@@ -154,10 +164,7 @@ export default function Home() {
         </div>
 
         {/* Single Update Button */}
-        <Button
-          onClick={handleUpdateParameters}
-          className="w-full"
-        >
+        <Button onClick={handleUpdateParameters} className="w-full">
           Update Model Parameters
         </Button>
       </div>
