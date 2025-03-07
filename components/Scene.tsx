@@ -16,6 +16,7 @@ import {
 import { supabase } from "@/lib/supabase";
 import { registerBuiltInLoaders } from "@babylonjs/loaders/dynamic";
 import SupabaseUtils from "@/lib/supabaseUtils";
+import MenuUtils from "@/lib/menuUtils";
 
 interface SceneProps {
   modelName: string;
@@ -68,12 +69,27 @@ export default function Scene({ modelName, modelScaling, modelRotation }: SceneP
     floorMaterial.alpha = 0.2;
     floor.material = floorMaterial;
 
-    const menuHolder = BABYLON.MeshBuilder.CreatePlane("menuHolder");
+    const menuHolder = BABYLON.MeshBuilder.CreatePlane("menuHolder", { width: 1, height: 1 }, scene);
     menuHolder.position = new BABYLON.Vector3(0, 1, 2)
     menuHolder.billboardMode = BABYLON.Mesh.BILLBOARDMODE_ALL
 
-    const menuUI = GUI.AdvancedDynamicTexture.CreateForMeshTexture(menuHolder, 1, 1);
-    menuUI.parseFromSnippetAsync("#GYLJ95#4")
+    const menuUI = GUI.AdvancedDynamicTexture.CreateForMesh(menuHolder, 2048, 2048);
+
+    menuUI.parseFromSnippetAsync("#GYLJ95#5").then(() => {
+      console.log("GUI snippet loaded successfully");
+      const componentName = "cycleButton"
+      const cycleButton = MenuUtils.findControlByName(menuUI, componentName);
+
+      if (cycleButton) {
+        cycleButton.onPointerUpObservable.add(() => {
+          cycleMeshVisibility();
+        })
+      } else {
+        console.error("No component with name" + componentName);
+      }
+    }).catch(error => {
+      console.error("Failed to load GUI snippet:", error);
+    });
 
     // Setup WebXR
     scene.createDefaultXRExperienceAsync({
@@ -86,10 +102,19 @@ export default function Scene({ modelName, modelScaling, modelRotation }: SceneP
       xrExperienceRef.current = xr;
       console.log("XR experience created successfully");
 
-      // Setup controller observables after XR is initialized
-      setupControllerObservables(xr);
-      // Setup manual button press handling using scene action manager
+      // setupControllerObservables(xr);
+
       setupManualTriggerHandling(scene);
+
+      xr.baseExperience.onStateChangedObservable.add((state) => {
+        if (state === BABYLON.WebXRState.IN_XR) {
+          console.log("Entered XR, disabling debug triggers");
+          disableDebugTriggers(scene);
+        } else if (state === BABYLON.WebXRState.NOT_IN_XR) {
+          console.log("Exited XR, re-enabling debug triggers");
+          enableDebugTriggers(scene);
+        }
+      });
     }).catch((error) => {
       console.error("Error creating XR experience:", error);
     });
@@ -119,15 +144,12 @@ export default function Scene({ modelName, modelScaling, modelRotation }: SceneP
       console.log("No meshes available to cycle through");
       return;
     }
-
-    // Hide current mesh
+    // Hid  current mesh
     if (targetMeshesRef.current[currentMeshIndexRef.current]) {
       targetMeshesRef.current[currentMeshIndexRef.current].setEnabled(false);
     }
-
     // Move to next mesh
     currentMeshIndexRef.current = (currentMeshIndexRef.current + 1) % targetMeshesRef.current.length;
-
     // Show new current mesh
     if (targetMeshesRef.current[currentMeshIndexRef.current]) {
       targetMeshesRef.current[currentMeshIndexRef.current].setEnabled(true);
@@ -135,10 +157,15 @@ export default function Scene({ modelName, modelScaling, modelRotation }: SceneP
     }
   };
 
+  const observersRef = {
+    keyboard: null as BABYLON.Observer<BABYLON.KeyboardInfo> | null,
+    pointer: null as BABYLON.Observer<BABYLON.PointerInfo> | null
+  };
+
   // Setup manual trigger handling for testing without XR controllers
   const setupManualTriggerHandling = (scene: BabylonScene) => {
     // Add keyboard event for testing (press 'T' to simulate trigger)
-    scene.onKeyboardObservable.add((kbInfo) => {
+    observersRef.keyboard = scene.onKeyboardObservable.add((kbInfo) => {
       if (kbInfo.type === KeyboardEventTypes.KEYDOWN) {
         if (kbInfo.event.key === 't' || kbInfo.event.key === 'T') {
           console.log("Manual trigger activated via keyboard");
@@ -148,7 +175,7 @@ export default function Scene({ modelName, modelScaling, modelRotation }: SceneP
     });
 
     // Also respond to pointer down events (clicks)
-    scene.onPointerObservable.add((pointerInfo) => {
+    observersRef.pointer = scene.onPointerObservable.add((pointerInfo) => {
       if (pointerInfo.type === PointerEventTypes.POINTERDOWN) {
         console.log("Screen tap/click detected");
         cycleMeshVisibility();
@@ -156,29 +183,43 @@ export default function Scene({ modelName, modelScaling, modelRotation }: SceneP
     });
   };
 
-  const setupControllerObservables = (xr: WebXRDefaultExperience) => {
-    xr.input.onControllerAddedObservable.add((inputSource) => {
-      inputSource.onMotionControllerInitObservable.add((motionController) => {
-        const triggerComponent = motionController.getComponent("xr-standard-trigger");
-        if (triggerComponent) {
-          let wasPressed = false;
-
-          triggerComponent.onButtonStateChangedObservable.add((component) => {
-            if (component.pressed && !wasPressed) {
-              console.log("Controller trigger press detected");
-              cycleMeshVisibility();
-            }
-            wasPressed = component.pressed;
-          });
-        }
-      });
-    });
-
-    xr.input.onControllerRemovedObservable.add((controller) => {
-      console.log("Controller disconnected:", controller.uniqueId);
-    });
+  // Function to disable debug triggers when in XR
+  const disableDebugTriggers = (scene: BabylonScene) => {
+    console.log("Disabling debug keyboard and screen triggers for XR");
+    if (observersRef.keyboard !== null) {
+      scene.onKeyboardObservable.remove(observersRef.keyboard);
+    }
+    if (observersRef.pointer !== null) {
+      scene.onPointerObservable.remove(observersRef.pointer);
+    }
   };
 
+  // Function to re-enable debug triggers when exiting XR
+  const enableDebugTriggers = (scene: BabylonScene) => {
+    console.log("Re-enabling debug keyboard and screen triggers");
+    setupManualTriggerHandling(scene);
+  };
+
+  // const setupControllerObservables = (xr: WebXRDefaultExperience) => {
+  //   xr.input.onControllerAddedObservable.add((inputSource) => {
+  //     inputSource.onMotionControllerInitObservable.add((motionController) => {
+  //       const triggerComponent = motionController.getComponent("xr-standard-trigger");
+  //       if (triggerComponent) {
+  //         let wasPressed = false;
+  //         triggerComponent.onButtonStateChangedObservable.add((component) => {
+  //           if (component.pressed && !wasPressed) {
+  //             console.log("Controller trigger press detected");
+  //             cycleMeshVisibility();
+  //           }
+  //           wasPressed = component.pressed;
+  //         });
+  //       }
+  //     });
+  //   });
+  //   xr.input.onControllerRemovedObservable.add((controller) => {
+  //     console.log("Controller disconnected:", controller.uniqueId);
+  //   });
+  // };
 
   useEffect(() => {
     const loadModels = async () => {
