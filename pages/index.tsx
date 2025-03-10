@@ -331,7 +331,7 @@ export default function Home() {
                                                     className="custom-slider"
                                                     min={0}
                                                     max={360}
-                                                    step={1}
+                                                    step={5}
                                                     value={[
                                                         parseFloat(
                                                             formValues.rotationX
@@ -367,7 +367,7 @@ export default function Home() {
                                                     className="custom-slider"
                                                     min={0}
                                                     max={360}
-                                                    step={1}
+                                                    step={5}
                                                     value={[
                                                         parseFloat(
                                                             formValues.rotationY
@@ -403,7 +403,7 @@ export default function Home() {
                                                     className="custom-slider"
                                                     min={0}
                                                     max={360}
-                                                    step={1}
+                                                    step={5}
                                                     value={[
                                                         parseFloat(
                                                             formValues.rotationZ
