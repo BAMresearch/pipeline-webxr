@@ -185,7 +185,6 @@ export default function Scene({
                         floorMeshes: [floor],
                         uiOptions: {
                             sessionMode: 'immersive-ar',
-                            referenceSpaceType: 'unbounded',
                         },
                         optionalFeatures: true,
                     })
