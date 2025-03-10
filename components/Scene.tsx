@@ -192,7 +192,7 @@ export default function Scene({
                     .then((xr) => {
                         console.log('XR experience created successfully');
                         xrExperienceRef.current = xr;
-                        setupManualTriggerHandling(scene);
+                        // setupManualTriggerHandling(scene);
                         performInputDetection(xr);
                         xr.baseExperience.onStateChangedObservable.add(
                             (state) => {
@@ -203,13 +203,13 @@ export default function Scene({
                                     // setTimeout(() => {
                                     //     performInputDetection(xr);
                                     // }, 1000); // Give controllers a second to connect
-                                    disableDebugTriggers(scene);
+                                    // disableDebugTriggers(scene);
                                 } else if (
                                     state === BABYLON.WebXRState.NOT_IN_XR
                                 ) {
                                     console.log('Exited XR');
                                     setInXRSession(false);
-                                    enableDebugTriggers(scene);
+                                    // enableDebugTriggers(scene);
                                 }
                             }
                         );
