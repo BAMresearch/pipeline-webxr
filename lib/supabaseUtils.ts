@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase';
 
-const TOP_LEVEL_FOLDER = 'public';
+const TOP_LEVEL_FOLDER = 'public-combined';
 
 /**
  * Utility class for Supabase storage operations
@@ -9,7 +9,7 @@ class SupabaseUtils {
     /**
      * List files in a storage bucket
      * @param bucketName - Name of the bucket to list files from
-     * @param folderPath - Path of the folder within the bucket (optional)
+     * @param folderPath - Path of the folder within the bucket DOES NOT INCLUDE THE TOP LEVEL FOLDER
      * @param options - Additional options for listing files
      * @returns A promise with the list results
      */
@@ -25,7 +25,7 @@ class SupabaseUtils {
         try {
             const { data, error } = await supabase.storage
                 .from(bucketName)
-                .list(folderPath, options);
+                .list(`${TOP_LEVEL_FOLDER}/${folderPath}`, options);
 
             if (error) {
                 throw error;
@@ -87,6 +87,13 @@ class SupabaseUtils {
         } catch (error) {
             return { data: null, error };
         }
+    }
+
+    static async getPublicUrl(bucketName: string, filePath: string) {
+        const response = supabase.storage
+            .from(bucketName)
+            .getPublicUrl(`${TOP_LEVEL_FOLDER}/${filePath}`);
+        return response.data.publicUrl;
     }
 }
 
