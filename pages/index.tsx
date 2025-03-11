@@ -1,7 +1,6 @@
 'use client';
 
 import { memo, useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
 import dynamic from 'next/dynamic';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -17,6 +16,7 @@ import {
     Settings,
     ZoomIn,
 } from 'lucide-react';
+import SupabaseUtils from '@/lib/supabaseUtils';
 
 // Use memo to prevent unnecessary re-renders of the Scene component
 const Scene = memo(
@@ -57,14 +57,14 @@ export default function Home() {
     async function fetchModels() {
         setLoading(true);
         try {
-            const { data, error } = await supabase.storage
-                .from('models')
-                .list('public');
+            const { data, error } = await SupabaseUtils.listModels('models');
 
             if (error) {
                 console.error('Error fetching models:', error);
             } else if (data) {
-                const modelNames = data.map((file) => file.name);
+                const modelNames = data.map(
+                    (file: { name: string }) => file.name as string
+                );
                 setModels(modelNames);
                 if (modelNames.length > 0) {
                     setSelectedModel(modelNames[0]);
@@ -110,33 +110,38 @@ export default function Home() {
         setSelectedModel(model);
     };
 
-    // Custom style to modify slider appearance
-    const sliderStyle = `
-    .custom-slider {
-      height: 4px;
-      background-color: #3b82f6 !important; /* Full color */
-      border-radius: 9999px;
-    }
-
-    .custom-slider > span {
-      height: 100%;
-      background-color: #3b82f6 !important; /* Same color */
-      border-radius: 9999px;
-    }
-
-    .custom-slider span span {
-      height: 16px !important;
-      width: 16px !important;
-      background-color: #3b82f6 !important; /* Make thumb same as slider */
-      border: none !important; /* Remove border */
-      box-shadow: none !important; /* Remove shadow */
-      margin-top: -6px !important;
-    }
-  `;
+    // Extract CSS to a separate component to avoid hydration issues
+    // Don't touch it is very delicate
+    const CustomStyles = () => (
+        <style
+            dangerouslySetInnerHTML={{
+                __html: `
+                .custom-slider {
+                    height: 4px;
+                    background-color: #3b82f6 !important;
+                    border-radius: 9999px;
+                }
+                .custom-slider > span {
+                    height: 100%;
+                    background-color: #3b82f6 !important;
+                    border-radius: 9999px;
+                }
+                .custom-slider span span {
+                    height: 16px !important;
+                    width: 16px !important;
+                    background-color: #3b82f6 !important;
+                    border: none !important;
+                    box-shadow: none !important;
+                    margin-top: -6px !important;
+                }
+            `,
+            }}
+        />
+    );
 
     return (
         <div className="min-h-screen flex flex-col bg-gray-50 p-4 md:p-8">
-            <style>{sliderStyle}</style>
+            <CustomStyles />
 
             <header className="mb-8">
                 <h1 className="text-3xl md:text-4xl font-bold text-gray-800">

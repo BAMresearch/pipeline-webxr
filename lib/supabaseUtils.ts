@@ -1,5 +1,7 @@
 import { supabase } from '@/lib/supabase';
 
+const TOP_LEVEL_FOLDER = 'public';
+
 /**
  * Utility class for Supabase storage operations
  */
@@ -36,7 +38,7 @@ class SupabaseUtils {
     }
 
     /**
-     * List available models from the public folder
+     * List available models from the top level folder
      * @param bucketName - Name of the bucket
      * @returns A promise with the list of model folders
      */
@@ -44,7 +46,7 @@ class SupabaseUtils {
         try {
             const { data, error } = await supabase.storage
                 .from(bucketName)
-                .list('public');
+                .list(`${TOP_LEVEL_FOLDER}`);
 
             if (error) {
                 throw error;
@@ -68,7 +70,7 @@ class SupabaseUtils {
      */
     static async listSimulationTypes(bucketName: string, modelName: string) {
         try {
-            const folderPath = `public/${modelName}`;
+            const folderPath = `${TOP_LEVEL_FOLDER}/${modelName}`;
             const { data, error } = await supabase.storage
                 .from(bucketName)
                 .list(folderPath);

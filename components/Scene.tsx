@@ -101,7 +101,7 @@ export default function Scene({
             'floorMaterial',
             scene
         );
-        floorMaterial.diffuseColor = new BABYLON.Color3(0.2, 0.2, 0.2);
+        floorMaterial.diffuseColor = new BABYLON.Color3(0.1, 0.1, 0.1);
         floorMaterial.alpha = 0.2;
         floor.material = floorMaterial;
 
