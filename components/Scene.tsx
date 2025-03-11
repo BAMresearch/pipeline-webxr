@@ -330,10 +330,6 @@ export default function Scene({
         // Force garbage collection hint
         if (sceneRef.current) {
             sceneRef.current.cleanCachedTextureBuffer();
-            // Optional: trigger a garbage collection hint in Babylon
-            if (engineRef.current) {
-                engineRef.current.wipeCaches(true);
-            }
         }
     };
 
