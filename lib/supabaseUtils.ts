@@ -89,6 +89,12 @@ class SupabaseUtils {
         }
     }
 
+    /**
+     * Get the public url using the top level folder
+     * @param bucketName - Name of the bucket
+     * @param filePath - Path of the file within the bucket, DOES NOT INCLUDE THE TOP LEVEL FOLDER
+     * @returns A promise with the string containing the public url
+     */
     static async getPublicUrl(bucketName: string, filePath: string) {
         const response = supabase.storage
             .from(bucketName)

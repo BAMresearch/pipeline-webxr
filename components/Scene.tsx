@@ -30,7 +30,7 @@ interface SimulationResult {
 
 const MenuSnippets = {
     spatial: '#GYLJ95#5',
-    fullscreen: '#GYLJ95#7',
+    fullscreen: '#GYLJ95#11',
 };
 
 export default function Scene({
@@ -456,14 +456,27 @@ export default function Scene({
                     .parseFromSnippetAsync(MenuSnippets.spatial)
                     .then(() => {
                         console.log('Spatial UI loaded successfully');
-                        const cycleButton = MenuUtils.findControlByName(
+                        const cycleColorButton = MenuUtils.findControlByName(
                             spacialUI,
-                            'cycleButton'
+                            'cycleColorButton'
                         );
-                        if (cycleButton) {
-                            cycleButton.onPointerUpObservable.add(() => {
+                        if (cycleColorButton) {
+                            cycleColorButton.onPointerUpObservable.add(() => {
                                 cycleSimulationResults();
                             });
+                        }
+
+                        const cycleSimulationButton =
+                            MenuUtils.findControlByName(
+                                spacialUI,
+                                'cycleSimulationButton'
+                            );
+                        if (cycleSimulationButton) {
+                            cycleSimulationButton.onPointerUpObservable.add(
+                                () => {
+                                    cycleSimulationTypes();
+                                }
+                            );
                         }
                     })
                     .catch((error) => {
@@ -475,14 +488,27 @@ export default function Scene({
                     .parseFromSnippetAsync(MenuSnippets.fullscreen)
                     .then(() => {
                         console.log('Fullscreen UI loaded successfully');
-                        const cycleButton = MenuUtils.findControlByName(
+                        const cycleColorButton = MenuUtils.findControlByName(
                             fullscreenUI,
-                            'cycleButton'
+                            'cycleColorButton'
                         );
-                        if (cycleButton) {
-                            cycleButton.onPointerUpObservable.add(() => {
+                        if (cycleColorButton) {
+                            cycleColorButton.onPointerUpObservable.add(() => {
                                 cycleSimulationResults();
                             });
+                        }
+
+                        const cycleSimulationButton =
+                            MenuUtils.findControlByName(
+                                fullscreenUI,
+                                'cycleSimulationButton'
+                            );
+                        if (cycleSimulationButton) {
+                            cycleSimulationButton.onPointerUpObservable.add(
+                                () => {
+                                    cycleSimulationTypes();
+                                }
+                            );
                         }
                     })
                     .catch((error) => {
@@ -500,7 +526,7 @@ export default function Scene({
                         uiOptions: {
                             sessionMode: 'immersive-ar',
                         },
-                        optionalFeatures: true,
+                        disableTeleportation: true,
                     })
                     .then((xr) => {
                         console.log('XR experience created successfully');
@@ -658,6 +684,18 @@ export default function Scene({
             `[useEffect] Fullscreen UI ${!inXRSession || (inXRSession && !isVRHeadset) ? 'visible' : 'hidden'}`
         );
     }, [deviceType, inXRSession]); // This effect runs when either state changes
+
+    const cycleSimulationTypes = () => {
+        if (availableSimulationTypesRef.current.length > 1) {
+            const currentIndex = availableSimulationTypesRef.current.indexOf(
+                currentSimulationTypeRef.current
+            );
+            const nextIndex =
+                (currentIndex + 1) % availableSimulationTypesRef.current.length;
+            const nextType = availableSimulationTypesRef.current[nextIndex];
+            switchSimulationType(nextType);
+        }
+    };
 
     const observersRef = {
         keyboard: null as BABYLON.Observer<BABYLON.KeyboardInfo> | null,
