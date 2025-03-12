@@ -693,6 +693,17 @@ export default function Scene({
         }
     };
 
+    const createSimulationTypeButton = (simulation: string) => {
+        const button = GUI.Button.CreateSimpleButton(
+            `${simulation}Button`,
+            simulation
+        );
+        button.width = '100px';
+        button.height = '40px';
+        button.color = 'white';
+        button.background = 'gray';
+    };
+
     const observersRef = {
         keyboard: null as BABYLON.Observer<BABYLON.KeyboardInfo> | null,
         pointer: null as BABYLON.Observer<BABYLON.PointerInfo> | null,
