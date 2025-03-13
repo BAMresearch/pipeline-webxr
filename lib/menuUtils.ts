@@ -1,5 +1,7 @@
-import * as BABYLON from '@babylonjs/core';
 import * as GUI from '@babylonjs/gui';
+
+const SELECTED_COLOR = '#ed5aff';
+const DEFAULT_COLOR = '#333333';
 
 class MenuUtils {
     /**
@@ -92,7 +94,6 @@ class MenuUtils {
      * @param switchSimulationType - Function to call when a simulation type is selected
      */
     static createSimulationTypeButtons(
-        scene: BABYLON.Scene,
         fullscreenUI: GUI.AdvancedDynamicTexture | null,
         spacialUI: GUI.AdvancedDynamicTexture | null,
         simulationTypes: string[],
@@ -112,6 +113,8 @@ class MenuUtils {
             fullscreenUI,
             'simulationTypesContainer'
         ) as GUI.StackPanel;
+
+        console.debug('fullscreenSimContainer', fullscreenSimContainer);
         const spacialSimContainer = this.findControlByName(
             spacialUI,
             'simulationTypesContainer'
@@ -141,8 +144,8 @@ class MenuUtils {
             const header = new GUI.TextBlock();
             header.text = 'Simulation Types';
             header.color = 'white';
-            header.height = '30px';
-            header.fontSize = 16;
+            header.height = '100px';
+            header.fontSize = 104;
             header.fontWeight = 'bold';
             spacialSimContainer.addControl(header);
         }
@@ -155,15 +158,17 @@ class MenuUtils {
                     `type_${typeName}_fullscreen`,
                     typeName
                 );
-                button.width = '180px';
+                button.width = '100px';
                 button.height = '40px';
                 button.color = 'white';
                 button.cornerRadius = 8;
                 button.thickness = 1;
                 button.background =
-                    typeName === currentSimulationType ? '#00CCFF' : '#333333';
+                    typeName === currentSimulationType
+                        ? SELECTED_COLOR
+                        : DEFAULT_COLOR;
                 button.horizontalAlignment =
-                    GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+                    GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
 
                 // Add click event
                 button.onPointerUpObservable.add(() => {
@@ -172,15 +177,14 @@ class MenuUtils {
                         if (control instanceof GUI.Button) {
                             control.background =
                                 control.name === `type_${typeName}_fullscreen`
-                                    ? '#00CCFF'
-                                    : '#333333';
+                                    ? SELECTED_COLOR
+                                    : DEFAULT_COLOR;
                         }
                     });
 
                     // Switch to this simulation type
                     switchSimulationType(typeName);
                 });
-
                 fullscreenSimContainer.addControl(button);
             }
 
@@ -190,15 +194,17 @@ class MenuUtils {
                     `type_${typeName}_spacial`,
                     typeName
                 );
-                button.width = '180px';
-                button.height = '40px';
+                button.width = '60%';
+                button.height = '100px';
                 button.color = 'white';
                 button.cornerRadius = 8;
                 button.thickness = 1;
                 button.background =
-                    typeName === currentSimulationType ? '#00CCFF' : '#333333';
+                    typeName === currentSimulationType
+                        ? SELECTED_COLOR
+                        : DEFAULT_COLOR;
                 button.horizontalAlignment =
-                    GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+                    GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
 
                 // Add click event
                 button.onPointerUpObservable.add(() => {
@@ -207,8 +213,8 @@ class MenuUtils {
                         if (control instanceof GUI.Button) {
                             control.background =
                                 control.name === `type_${typeName}_spacial`
-                                    ? '#00CCFF'
-                                    : '#333333';
+                                    ? SELECTED_COLOR
+                                    : DEFAULT_COLOR;
                         }
                     });
 
@@ -256,8 +262,8 @@ class MenuUtils {
                         const buttonTypeName = buttonNameParts[1]; // Extract type name from button name
                         control.background =
                             buttonTypeName === currentSimulationType
-                                ? '#00CCFF'
-                                : '#333333';
+                                ? SELECTED_COLOR
+                                : DEFAULT_COLOR;
                     }
                 }
             });
@@ -278,8 +284,8 @@ class MenuUtils {
                         const buttonTypeName = buttonNameParts[1]; // Extract type name from button name
                         control.background =
                             buttonTypeName === currentSimulationType
-                                ? '#00CCFF'
-                                : '#333333';
+                                ? SELECTED_COLOR
+                                : DEFAULT_COLOR;
                     }
                 }
             });

@@ -29,8 +29,8 @@ interface SimulationResult {
 }
 
 const MenuSnippets = {
-    spatial: '#GYLJ95#5',
-    fullscreen: '#GYLJ95#11',
+    spatial: '#GAF8QH#3',
+    fullscreen: '#GYLJ95#15',
 };
 
 export default function Scene({
@@ -86,7 +86,6 @@ export default function Scene({
 
             // Store available simulation types in ref instead of state
             const types = simulationTypesResult.data.map((item) => item.name);
-            console.log('Available simulation types:', types);
             availableSimulationTypesRef.current = types;
             console.log(
                 'Available simulation types stored:',
@@ -462,6 +461,9 @@ export default function Scene({
                             });
                         }
 
+                        // If the button is not there in the snippet, then the button is not in the scene
+                        // Can be used to debug the app, just add a button with the name
+                        // cycleSimulationButton in the snippet
                         const cycleSimulationButton =
                             MenuUtils.findControlByName(
                                 spacialUI,
@@ -494,6 +496,9 @@ export default function Scene({
                             });
                         }
 
+                        // If the button is not there in the snippet, then the button is not in the scene
+                        // Can be used to debug the app, just add a button with the name
+                        // cycleSimulationButton in the snippet
                         const cycleSimulationButton =
                             MenuUtils.findControlByName(
                                 fullscreenUI,
@@ -748,7 +753,16 @@ export default function Scene({
             // Clear the available simulation types
             availableSimulationTypesRef.current = [];
             // Fetch new simulation results
-            fetchSimulationResults();
+            fetchSimulationResults().then(() => {
+                console.log('Simulation results loaded, creating UI buttons');
+                MenuUtils.createSimulationTypeButtons(
+                    fullscreenUIRef.current,
+                    spacialUIRef.current,
+                    availableSimulationTypesRef.current,
+                    availableSimulationTypesRef.current[0],
+                    switchSimulationType
+                );
+            });
         }
 
         // Cleanup function to ensure models are disposed when component unmounts
