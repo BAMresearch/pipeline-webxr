@@ -15,6 +15,8 @@ import * as GUI from '@babylonjs/gui';
 import { registerBuiltInLoaders } from '@babylonjs/loaders/dynamic';
 import SupabaseUtils from '@/lib/supabaseUtils';
 import MenuUtils from '@/lib/menuUtils';
+import { SimulationResult } from '@/components/SimulationResult';
+import MeshUtils from '@/lib/meshUtils';
 
 interface SceneProps {
     modelName: string;
@@ -22,15 +24,9 @@ interface SceneProps {
     modelRotation: { x: number; y: number; z: number };
 }
 
-interface SimulationResult {
-    type: string;
-    meshes: AbstractMesh[];
-    currentIndex: number;
-}
-
 const MenuSnippets = {
     spatial: '#GAF8QH#3',
-    fullscreen: '#GYLJ95#15',
+    fullscreen: '#GYLJ95#17',
 };
 
 export default function Scene({
@@ -440,7 +436,6 @@ export default function Scene({
             );
             fullscreenUIRef.current = fullscreenUI;
 
-            // Initially hide both UIs until we determine which to show
             menuHolder.setEnabled(false);
             fullscreenUI.renderScale = 1.0;
 
@@ -460,6 +455,8 @@ export default function Scene({
                                 cycleSimulationResults();
                             });
                         }
+
+                        setupMoveButtons(spacialUI);
 
                         // If the button is not there in the snippet, then the button is not in the scene
                         // Can be used to debug the app, just add a button with the name
@@ -495,6 +492,8 @@ export default function Scene({
                                 cycleSimulationResults();
                             });
                         }
+
+                        setupMoveButtons(fullscreenUI);
 
                         // If the button is not there in the snippet, then the button is not in the scene
                         // Can be used to debug the app, just add a button with the name
@@ -558,6 +557,43 @@ export default function Scene({
             }
         });
 
+        /**
+         * Function to set up the functionality of move buttons for moving the model up and down.
+         * @param menu - The GUI menu to search for the buttons (spatial or fullscreen UI)
+         */
+        const setupMoveButtons = (menu: GUI.AdvancedDynamicTexture) => {
+            if (!menu) return;
+            const moveUpButton = MenuUtils.findControlByName(
+                menu,
+                'moveUpButton'
+            );
+            if (moveUpButton) {
+                moveUpButton.onPointerUpObservable.add(() => {
+                    for (const result of simulationResultsRef.current.values()) {
+                        MeshUtils.moveSimulationResultMeshes(
+                            result,
+                            new BABYLON.Vector3(0, 0.1, 0)
+                        );
+                    }
+                });
+            }
+
+            const moveDownButton = MenuUtils.findControlByName(
+                menu,
+                'moveDownButton'
+            );
+            if (moveDownButton) {
+                moveDownButton.onPointerUpObservable.add(() => {
+                    for (const result of simulationResultsRef.current.values()) {
+                        MeshUtils.moveSimulationResultMeshes(
+                            result,
+                            new BABYLON.Vector3(0, -0.1, 0)
+                        );
+                    }
+                });
+            }
+        };
+
         const updateUIVisibility = (inXRSession: boolean) => {
             if (spatialUIRef.current && fullscreenUIRef.current) {
                 const isVRHeadset = deviceType === 'vr-headset';
@@ -594,6 +630,12 @@ export default function Scene({
             }
         };
 
+        /**
+         * Function to check whether VR controllers are detected by the scene.
+         * If controllers are detected we can assume that we are in the VR headset mode.
+         * Thus, we show the VR UI (spatial). Otherwise, we show the fullscreen UI.
+         * @param xrExperience - The WebXR experience object which contains the input controllers
+         */
         const performInputDetection = (
             xrExperience: WebXRDefaultExperience
         ) => {
