@@ -10,8 +10,6 @@ A Next.js application for visualizing 3D models in augmented reality using Babyl
 
 ## Getting Started
 
-Follow these steps to set up the project locally:
-
 1. **Clone the repository**
 
 ```bash
