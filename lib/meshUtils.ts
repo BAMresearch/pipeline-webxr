@@ -85,13 +85,20 @@ class MeshUtils {
         return material;
     }
 
+    /**
+     * Moves all meshes found in a SimulationResult by a vector. Can specify
+     * if the vector should be added or replace the current position,
+     * @param result - The SimulationResult object with meshes.
+     * @param vector - A positional vector
+     * @param operation_type - Type of operation
+     */
     public static moveSimulationResultMeshes(
         result: SimulationResult,
         vector: BABYLON.Vector3,
-        type: 'add' | 'set' = 'add'
+        operation_type: 'add' | 'set' = 'add'
     ) {
         for (const mesh of result.meshes) {
-            if (type === 'set') {
+            if (operation_type === 'set') {
                 mesh.position.copyFrom(vector);
             } else {
                 mesh.position.addInPlace(vector);

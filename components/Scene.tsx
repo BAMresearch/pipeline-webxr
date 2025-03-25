@@ -584,6 +584,7 @@ export default function Scene({
             ) as Checkbox;
             if (moveObjectCheckbox) {
                 moveObjectCheckbox.onIsCheckedChangedObservable.add((value) => {
+                    // Need to invert the value
                     console.log(
                         'Move object checkbox checked INVERTING VALUE:',
                         !value
@@ -592,6 +593,10 @@ export default function Scene({
                 });
             }
         };
+
+        // Joysticks turned out not to be the best idea since the babylonjs built-in implementation prevents the input
+        // Of any other menu item and checks the entire screen for input. This makes it unable to use the menu while
+        // the Joystick is enabled.
 
         const toggleJoystick = (value: boolean) => {
             if (!BABYLON.VirtualJoystick.Canvas) {
@@ -638,6 +643,12 @@ export default function Scene({
             });
         };
 
+        /**
+         * We set the object position by sending a ray from the camera position through the pointer.
+         * The intersection of that ray with the floor is the point to which the loaded simulation results will be
+         * moved.
+         * @param scene - The scene object, required to fetch the camera and floor objects.
+         */
         const setupPointerMove = (scene: BabylonScene) => {
             scene.onPointerObservable.add((pointerInfo) => {
                 // Only process if movement is enabled and it's a pointer down event

@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 
+// The name of the top level folder in the bucket where the models are in Supabase
 const TOP_LEVEL_FOLDER = 'public-combined';
 
 /**
