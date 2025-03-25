@@ -12,12 +12,12 @@ import {
     WebXRDefaultExperience,
 } from '@babylonjs/core';
 import * as GUI from '@babylonjs/gui';
+import { Checkbox } from '@babylonjs/gui';
 import { registerBuiltInLoaders } from '@babylonjs/loaders/dynamic';
 import SupabaseUtils from '@/lib/supabaseUtils';
 import MenuUtils from '@/lib/menuUtils';
 import { SimulationResult } from '@/components/SimulationResult';
 import MeshUtils from '@/lib/meshUtils';
-import { Checkbox } from '@babylonjs/gui';
 
 interface SceneProps {
     modelName: string;
@@ -52,6 +52,8 @@ export default function Scene({
 
     // Replace useState with useRef for availableSimulationTypes
     const availableSimulationTypesRef = useRef<string[]>([]);
+
+    const movementEnabledRef = useRef<boolean>(false);
 
     // Keep these as useState because they're used for UI rendering
     const [deviceType, setDeviceType] = useState<string>('unknown');
@@ -217,38 +219,6 @@ export default function Scene({
             }
         } catch (error) {
             console.error('Error loading simulation results:', error);
-        }
-    };
-
-    const cycleSimulationResults = () => {
-        const currentSimType = currentSimulationTypeRef.current;
-        if (
-            !currentSimType ||
-            !simulationResultsRef.current.has(currentSimType)
-        ) {
-            console.log(
-                'No current simulation type selected or no results available'
-            );
-            return;
-        }
-
-        const simResult = simulationResultsRef.current.get(currentSimType)!;
-
-        // Hide current mesh
-        if (simResult.meshes[simResult.currentIndex]) {
-            simResult.meshes[simResult.currentIndex].setEnabled(false);
-        }
-
-        // Move to next mesh
-        simResult.currentIndex =
-            (simResult.currentIndex + 1) % simResult.meshes.length;
-
-        // Show new current mesh
-        if (simResult.meshes[simResult.currentIndex]) {
-            simResult.meshes[simResult.currentIndex].setEnabled(true);
-            console.log(
-                `Switched to simulation result ${simResult.currentIndex} for type ${currentSimType}: ${simResult.meshes[simResult.currentIndex].name}`
-            );
         }
     };
 
@@ -488,7 +458,10 @@ export default function Scene({
                         console.log('XR experience created successfully');
                         xrExperienceRef.current = xr;
                         setupManualTriggerHandling(scene);
-                        performInputDetection(xr);
+                        // createJoystick(scene);
+                        performInputDetection(xrExperienceRef.current);
+                        setupPointerMove(scene);
+
                         xr.baseExperience.onStateChangedObservable.add(
                             (state) => {
                                 if (state === BABYLON.WebXRState.IN_XR) {
@@ -567,6 +540,10 @@ export default function Scene({
             }
         };
 
+        /**
+         * Function to set up the functionality of the move object checkbox for toggling object movement.
+         * @param menu - The GUI menu to search for the checkbox (spatial or fullscreen UI)
+         */
         const setupMoveObjectCheckbox = (menu: GUI.AdvancedDynamicTexture) => {
             if (!menu) return;
             const moveObjectCheckbox = MenuUtils.findControlByName(
@@ -575,9 +552,131 @@ export default function Scene({
             ) as Checkbox;
             if (moveObjectCheckbox) {
                 moveObjectCheckbox.onIsCheckedChangedObservable.add((value) => {
-                    console.log('Move object checkbox checked:', value);
+                    console.log(
+                        'Move object checkbox checked INVERTING VALUE:',
+                        !value
+                    );
+                    // toggleJoystick(value);
+                    movementEnabledRef.current = !value;
                 });
             }
+        };
+
+        const toggleJoystick = (value: boolean) => {
+            if (!BABYLON.VirtualJoystick.Canvas) {
+                console.error('VirtualJoystick not initialized');
+                return;
+            }
+            if (
+                value &&
+                xrExperienceRef.current?.baseExperience.state ===
+                    BABYLON.WebXRState.IN_XR
+            ) {
+                BABYLON.VirtualJoystick.Canvas.style.zIndex = '4';
+            } else {
+                BABYLON.VirtualJoystick.Canvas.style.zIndex = '-1';
+            }
+        };
+
+        /**
+         * Function to create a virtual joystick for moving the model in the scene.
+         * @param scene - The Babylon scene to attach the joystick to
+         */
+        const createJoystick = (scene: BabylonScene) => {
+            const joystick = new BABYLON.VirtualJoystick(true);
+
+            scene.onBeforeRenderObservable.add(() => {
+                if (joystick.pressed) {
+                    const moveSpeed = 1;
+                    const moveX =
+                        joystick.deltaPosition.x *
+                        (engine.getDeltaTime() / 1000) *
+                        moveSpeed;
+                    const moveZ =
+                        joystick.deltaPosition.y *
+                        (engine.getDeltaTime() / 1000) *
+                        moveSpeed;
+                    const moveVector = new BABYLON.Vector3(moveX, 0, moveZ);
+
+                    for (const result of simulationResultsRef.current.values()) {
+                        for (const mesh of result.meshes) {
+                            mesh.position.addInPlace(moveVector);
+                        }
+                    }
+                }
+            });
+        };
+
+        const setupPointerMove = (scene: BabylonScene) => {
+            scene.onPointerObservable.add((pointerInfo) => {
+                // Only process if movement is enabled and it's a pointer down event
+                if (
+                    !movementEnabledRef.current ||
+                    pointerInfo.type !== BABYLON.PointerEventTypes.POINTERDOWN
+                ) {
+                    return;
+                }
+                console.log('Processing pointer event', pointerInfo);
+
+                // Get the current active camera
+                const camera = scene.activeCamera;
+                if (!camera) {
+                    console.error('No active camera found');
+                    return;
+                }
+
+                // Create a ray from the camera through the pointer position
+                const ray = scene.createPickingRay(
+                    scene.pointerX,
+                    scene.pointerY,
+                    BABYLON.Matrix.Identity(),
+                    camera
+                );
+
+                // Find the floor mesh
+                const floor = scene.getMeshByName('floor');
+                if (!floor) {
+                    console.error('Floor mesh not found');
+                    return;
+                }
+
+                // Check if the ray intersects with the floor
+                const pickInfo = scene.pickWithRay(
+                    ray,
+                    (mesh) => mesh === floor
+                );
+
+                if (!pickInfo) {
+                    console.error('No intersection found');
+                    return;
+                }
+
+                if (pickInfo.hit && pickInfo.pickedPoint) {
+                    // Get current Y position of the object to maintain height
+                    const currentObjectY =
+                        simulationResultsRef.current.get(
+                            currentSimulationTypeRef.current
+                        )?.meshes[0].position.y ?? 0;
+
+                    // Create target position using floor intersection X,Z but keeping original Y
+                    const targetPosition = new BABYLON.Vector3(
+                        -pickInfo.pickedPoint.x, // needs to be inverted, reason unknown
+                        currentObjectY,
+                        pickInfo.pickedPoint.z
+                    );
+
+                    console.log('Moving object to:', targetPosition);
+
+                    // Move all simulation objects to this position
+                    for (const result of simulationResultsRef.current.values()) {
+                        MeshUtils.moveSimulationResultMeshes(
+                            result,
+                            targetPosition,
+                            'set'
+                        );
+                    }
+                }
+            });
         };
 
         const updateUIVisibility = (inXRSession: boolean) => {

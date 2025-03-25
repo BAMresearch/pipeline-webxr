@@ -87,10 +87,15 @@ class MeshUtils {
 
     public static moveSimulationResultMeshes(
         result: SimulationResult,
-        vector: BABYLON.Vector3
+        vector: BABYLON.Vector3,
+        type: 'add' | 'set' = 'add'
     ) {
         for (const mesh of result.meshes) {
-            mesh.position.addInPlace(vector);
+            if (type === 'set') {
+                mesh.position.copyFrom(vector);
+            } else {
+                mesh.position.addInPlace(vector);
+            }
         }
     }
 }
