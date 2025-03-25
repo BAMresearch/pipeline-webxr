@@ -241,6 +241,38 @@ export default function Scene({
         console.log(`Switched to simulation type: ${simulationType}`);
     };
 
+    const cycleSimulationResults = () => {
+        const currentSimType = currentSimulationTypeRef.current;
+        if (
+            !currentSimType ||
+            !simulationResultsRef.current.has(currentSimType)
+        ) {
+            console.log(
+                'No current simulation type selected or no results available'
+            );
+            return;
+        }
+
+        const simResult = simulationResultsRef.current.get(currentSimType)!;
+
+        // Hide current mesh
+        if (simResult.meshes[simResult.currentIndex]) {
+            simResult.meshes[simResult.currentIndex].setEnabled(false);
+        }
+
+        // Move to next mesh
+        simResult.currentIndex =
+            (simResult.currentIndex + 1) % simResult.meshes.length;
+
+        // Show new current mesh
+        if (simResult.meshes[simResult.currentIndex]) {
+            simResult.meshes[simResult.currentIndex].setEnabled(true);
+            console.log(
+                `Switched to simulation result ${simResult.currentIndex} for type ${currentSimType}: ${simResult.meshes[simResult.currentIndex].name}`
+            );
+        }
+    };
+
     // Helper function to hide all simulation results
     const hideAllSimulationResults = () => {
         simulationResultsRef.current.forEach((simResult) => {
@@ -494,11 +526,11 @@ export default function Scene({
             if (!menu) return;
             const cycleButton = MenuUtils.findControlByName(
                 menu,
-                'cycleButton'
+                'cycleColorButton'
             );
             if (cycleButton) {
                 cycleButton.onPointerUpObservable.add(() => {
-                    cycleSimulationTypes();
+                    cycleSimulationResults();
                 });
             }
         };
@@ -556,7 +588,6 @@ export default function Scene({
                         'Move object checkbox checked INVERTING VALUE:',
                         !value
                     );
-                    // toggleJoystick(value);
                     movementEnabledRef.current = !value;
                 });
             }
@@ -812,18 +843,6 @@ export default function Scene({
             `[useEffect] Fullscreen UI ${!inXRSession || (inXRSession && !isVRHeadset) ? 'visible' : 'hidden'}`
         );
     }, [deviceType, inXRSession]); // This effect runs when either state changes
-
-    const cycleSimulationTypes = () => {
-        if (availableSimulationTypesRef.current.length > 1) {
-            const currentIndex = availableSimulationTypesRef.current.indexOf(
-                currentSimulationTypeRef.current
-            );
-            const nextIndex =
-                (currentIndex + 1) % availableSimulationTypesRef.current.length;
-            const nextType = availableSimulationTypesRef.current[nextIndex];
-            switchSimulationType(nextType);
-        }
-    };
 
     const observersRef = {
         keyboard: null as BABYLON.Observer<BABYLON.KeyboardInfo> | null,
