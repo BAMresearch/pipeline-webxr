@@ -17,6 +17,7 @@ import SupabaseUtils from '@/lib/supabaseUtils';
 import MenuUtils from '@/lib/menuUtils';
 import { SimulationResult } from '@/components/SimulationResult';
 import MeshUtils from '@/lib/meshUtils';
+import { Checkbox } from '@babylonjs/gui';
 
 interface SceneProps {
     modelName: string;
@@ -26,7 +27,7 @@ interface SceneProps {
 
 const MenuSnippets = {
     spatial: '#GAF8QH#3',
-    fullscreen: '#GYLJ95#17',
+    fullscreen: '#GYLJ95#19',
 };
 
 export default function Scene({
@@ -352,20 +353,20 @@ export default function Scene({
         }
     };
 
-    // Initialize engine and scene only once
+    // Initialize engine and scene only once this effect is called when the website is loaded
+    // and when the scene parameters change (modelName, modelScaling, modelRotation)
     useEffect(() => {
+        // Startup boilerplate code to initialize the scene and engine for babylon.js and store them in refs
         registerBuiltInLoaders();
-
         if (!canvasRef.current) return;
 
-        // Create engine and scene
         const engine = new Engine(canvasRef.current, true);
         engineRef.current = engine;
 
         const scene = new BabylonScene(engine);
         sceneRef.current = scene;
 
-        // Check if VR is available
+        // Check if WebXR is available
         const xrPromise = BABYLON.WebXRSessionManager.IsSessionSupportedAsync(
             'immersive-ar'
         )
@@ -378,7 +379,7 @@ export default function Scene({
                 return false;
             });
 
-        // Setup camera
+        // Setup camera (for the preview scene on the main page)
         const camera = new ArcRotateCamera(
             'camera',
             -Math.PI / 2,
@@ -396,7 +397,10 @@ export default function Scene({
             scene
         );
 
-        // Create floor
+        // Create floor and make it (almost) transparent
+        // If it should be fully transparent, set alpha to 0
+        const alpha = 0.1;
+
         const floor = BABYLON.MeshBuilder.CreateGround(
             'floor',
             { width: 6, height: 6 },
@@ -407,10 +411,10 @@ export default function Scene({
             scene
         );
         floorMaterial.diffuseColor = new BABYLON.Color3(0.1, 0.1, 0.1);
-        floorMaterial.alpha = 0.2;
+        floorMaterial.alpha = alpha;
         floor.material = floorMaterial;
 
-        // Initialize both UIs after XR capability check
+        // Initialize both UIs after WebXR capability check
         xrPromise.then((vrCapable) => {
             // Create 3D spatial menu for VR
             const menuHolder = BABYLON.MeshBuilder.CreatePlane(
@@ -446,33 +450,9 @@ export default function Scene({
                     .parseFromSnippetAsync(MenuSnippets.spatial)
                     .then(() => {
                         console.log('Spatial UI loaded successfully');
-                        const cycleColorButton = MenuUtils.findControlByName(
-                            spacialUI,
-                            'cycleColorButton'
-                        );
-                        if (cycleColorButton) {
-                            cycleColorButton.onPointerUpObservable.add(() => {
-                                cycleSimulationResults();
-                            });
-                        }
-
+                        setupCycleButton(spacialUI);
                         setupMoveButtons(spacialUI);
-
-                        // If the button is not there in the snippet, then the button is not in the scene
-                        // Can be used to debug the app, just add a button with the name
-                        // cycleSimulationButton in the snippet
-                        const cycleSimulationButton =
-                            MenuUtils.findControlByName(
-                                spacialUI,
-                                'cycleSimulationButton'
-                            );
-                        if (cycleSimulationButton) {
-                            cycleSimulationButton.onPointerUpObservable.add(
-                                () => {
-                                    cycleSimulationTypes();
-                                }
-                            );
-                        }
+                        setupMoveObjectCheckbox(spacialUI);
                     })
                     .catch((error) => {
                         console.error('Failed to load spatial UI:', error);
@@ -483,33 +463,9 @@ export default function Scene({
                     .parseFromSnippetAsync(MenuSnippets.fullscreen)
                     .then(() => {
                         console.log('Fullscreen UI loaded successfully');
-                        const cycleColorButton = MenuUtils.findControlByName(
-                            fullscreenUI,
-                            'cycleColorButton'
-                        );
-                        if (cycleColorButton) {
-                            cycleColorButton.onPointerUpObservable.add(() => {
-                                cycleSimulationResults();
-                            });
-                        }
-
+                        setupCycleButton(fullscreenUI);
                         setupMoveButtons(fullscreenUI);
-
-                        // If the button is not there in the snippet, then the button is not in the scene
-                        // Can be used to debug the app, just add a button with the name
-                        // cycleSimulationButton in the snippet
-                        const cycleSimulationButton =
-                            MenuUtils.findControlByName(
-                                fullscreenUI,
-                                'cycleSimulationButton'
-                            );
-                        if (cycleSimulationButton) {
-                            cycleSimulationButton.onPointerUpObservable.add(
-                                () => {
-                                    cycleSimulationTypes();
-                                }
-                            );
-                        }
+                        setupMoveObjectCheckbox(fullscreenUI);
                     })
                     .catch((error) => {
                         console.error('Failed to load fullscreen UI:', error);
@@ -558,6 +514,23 @@ export default function Scene({
         });
 
         /**
+         * Function to set up the functionality of the cycle button for switching between simulation types.
+         * @param menu - The GUI menu to search for the button (spatial or fullscreen UI)
+         */
+        const setupCycleButton = (menu: GUI.AdvancedDynamicTexture) => {
+            if (!menu) return;
+            const cycleButton = MenuUtils.findControlByName(
+                menu,
+                'cycleButton'
+            );
+            if (cycleButton) {
+                cycleButton.onPointerUpObservable.add(() => {
+                    cycleSimulationTypes();
+                });
+            }
+        };
+
+        /**
          * Function to set up the functionality of move buttons for moving the model up and down.
          * @param menu - The GUI menu to search for the buttons (spatial or fullscreen UI)
          */
@@ -590,6 +563,19 @@ export default function Scene({
                             new BABYLON.Vector3(0, -0.1, 0)
                         );
                     }
+                });
+            }
+        };
+
+        const setupMoveObjectCheckbox = (menu: GUI.AdvancedDynamicTexture) => {
+            if (!menu) return;
+            const moveObjectCheckbox = MenuUtils.findControlByName(
+                menu,
+                'moveObjectCheckbox'
+            ) as Checkbox;
+            if (moveObjectCheckbox) {
+                moveObjectCheckbox.onIsCheckedChangedObservable.add((value) => {
+                    console.log('Move object checkbox checked:', value);
                 });
             }
         };
@@ -738,17 +724,6 @@ export default function Scene({
             const nextType = availableSimulationTypesRef.current[nextIndex];
             switchSimulationType(nextType);
         }
-    };
-
-    const createSimulationTypeButton = (simulation: string) => {
-        const button = GUI.Button.CreateSimpleButton(
-            `${simulation}Button`,
-            simulation
-        );
-        button.width = '100px';
-        button.height = '40px';
-        button.color = 'white';
-        button.background = 'gray';
     };
 
     const observersRef = {
