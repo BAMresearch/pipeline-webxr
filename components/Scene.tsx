@@ -594,8 +594,8 @@ export default function Scene({
             }
         };
 
-        // Joysticks turned out not to be the best idea since the babylonjs built-in implementation prevents the input
-        // Of any other menu item and checks the entire screen for input. This makes it unable to use the menu while
+        // Joysticks turned out not to be the best idea since the babylonjs built-in implementation captures the input
+        // of any other menu item and checks the entire screen for input. This makes it unable to use the menu while
         // the Joystick is enabled.
 
         const toggleJoystick = (value: boolean) => {
