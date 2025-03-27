@@ -52,3 +52,7 @@ pnpm build
 - To test AR features, you'll need a compatible device (AR-capable mobile phone or VR headset).
 - The application uses GitHub Actions for deployment to GitHub Pages. See the `.github/workflows/nextjs.yml` file for configuration details.
     - If you use GitHub Pages to deploy the website make sure to specify the `.env.local` variables in GitHub repository secrets.
+
+## Supabase Notes
+
+- For a detailed Supabase guide look at the [SUPABASE.md](SUPABASE.md) file
