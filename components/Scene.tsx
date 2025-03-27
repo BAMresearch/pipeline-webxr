@@ -26,7 +26,7 @@ interface SceneProps {
 }
 
 const MenuSnippets = {
-    spatial: '#GAF8QH#3',
+    spatial: '#71Q3DR#1',
     fullscreen: '#GYLJ95#19',
 };
 
@@ -421,16 +421,16 @@ export default function Scene({
             // Create 3D spatial menu for VR
             const menuHolder = BABYLON.MeshBuilder.CreatePlane(
                 'menuHolder',
-                { width: 1, height: 1 },
+                { width: 2, height: 2 },
                 scene
             );
-            menuHolder.position = new BABYLON.Vector3(0, 1, 2);
+            menuHolder.position = new BABYLON.Vector3(0, 1.5, 2);
             spatialUIRef.current = menuHolder;
 
             const spacialUI = GUI.AdvancedDynamicTexture.CreateForMesh(
                 menuHolder,
-                2048,
-                2048
+                1024,
+                1024
             );
             spacialUIRef.current = spacialUI;
 

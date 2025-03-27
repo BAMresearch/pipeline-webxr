@@ -145,7 +145,7 @@ class MenuUtils {
             header.text = 'Simulation Types';
             header.color = 'white';
             header.height = '100px';
-            header.fontSize = 104;
+            header.fontSize = 70;
             header.fontWeight = 'bold';
             spacialSimContainer.addControl(header);
         }
