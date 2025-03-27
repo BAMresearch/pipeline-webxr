@@ -132,17 +132,17 @@ class MenuUtils {
         // Create a header for the simulation types section
         if (fullscreenSimContainer) {
             const header = new GUI.TextBlock();
-            header.text = 'Simulation Types';
+            header.text = 'Texture';
             header.color = 'white';
             header.height = '30px';
-            header.fontSize = 16;
+            header.fontSize = 26;
             header.fontWeight = 'bold';
             fullscreenSimContainer.addControl(header);
         }
 
         if (spacialSimContainer) {
             const header = new GUI.TextBlock();
-            header.text = 'Simulation Types';
+            header.text = 'Texture';
             header.color = 'white';
             header.height = '100px';
             header.fontSize = 104;

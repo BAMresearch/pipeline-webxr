@@ -26,8 +26,8 @@ interface SceneProps {
 }
 
 const MenuSnippets = {
-    spatial: '#GAF8QH#3',
-    fullscreen: '#GYLJ95#19',
+    spatial: 'GAF8QH#4', //'#GAF8QH#3',
+    fullscreen: 'GYLJ95#22', //'#GYLJ95#19',
 };
 
 export default function Scene({
